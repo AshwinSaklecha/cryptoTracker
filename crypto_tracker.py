@@ -3,6 +3,7 @@ import pandas as pd
 import time
 from datetime import datetime
 import os
+import openpyxl
 
 class CryptoTracker:
     def __init__(self):
@@ -72,16 +73,84 @@ class CryptoTracker:
     def update_excel(self, df, analysis):
         """Update Excel file with latest data and analysis"""
         try:
+            # Prepare the data - convert symbols to uppercase
+            df['Symbol'] = df['Symbol'].str.upper()
+            
             with pd.ExcelWriter(self.excel_file, engine='openpyxl', mode='w') as writer:
                 # Write main data
                 df.to_excel(writer, sheet_name='Live Crypto Data', index=False)
                 
-                # Write analysis
-                analysis['Top 5 by Market Cap'].to_excel(writer, sheet_name='Analysis', startrow=1, index=False)
-                pd.DataFrame({
-                    'Average Price (USD)': [analysis['Average Price']]
-                }).to_excel(writer, sheet_name='Analysis', startrow=8, index=False)
+                # Get the workbook and worksheet
+                workbook = writer.book
+                worksheet = writer.sheets['Live Crypto Data']
                 
+                # Define styles
+                header_style = {
+                    'fill': {'fgColor': '366092', 'patternType': 'solid'},
+                    'font': {'color': 'FFFFFF', 'bold': True},
+                    'border': {'style': 'thin', 'color': '000000'}
+                }
+                
+                # Auto-adjust column widths
+                for column in worksheet.columns:
+                    max_length = 0
+                    column = [cell for cell in column]
+                    for cell in column:
+                        try:
+                            if len(str(cell.value)) > max_length:
+                                max_length = len(str(cell.value))
+                        except:
+                            pass
+                    adjusted_width = (max_length + 2)
+                    worksheet.column_dimensions[column[0].column_letter].width = adjusted_width
+                
+                # Apply header styling
+                for cell in worksheet[1]:
+                    cell.fill = openpyxl.styles.PatternFill(start_color=header_style['fill']['fgColor'],
+                                                           end_color=header_style['fill']['fgColor'],
+                                                           fill_type=header_style['fill']['patternType'])
+                    cell.font = openpyxl.styles.Font(color=header_style['font']['color'],
+                                                   bold=header_style['font']['bold'])
+                    cell.border = openpyxl.styles.Border(top=openpyxl.styles.Side(style='thin'),
+                                                       bottom=openpyxl.styles.Side(style='thin'),
+                                                       left=openpyxl.styles.Side(style='thin'),
+                                                       right=openpyxl.styles.Side(style='thin'))
+                
+                # Format numbers
+                price_format = openpyxl.styles.numbers.BUILTIN_FORMATS[44]  # Currency with 2 decimal places
+                large_number_format = '#,##0'
+                percent_format = '0.00%'
+                
+                # Apply number formatting and conditional formatting for price changes
+                for row in worksheet.iter_rows(min_row=2):  # Skip header
+                    # Price formatting
+                    row[2].number_format = price_format  # Current Price
+                    row[3].number_format = large_number_format  # Market Cap
+                    row[4].number_format = large_number_format  # Trading Volume
+                    
+                    # Price change formatting and colors
+                    price_change_cell = row[5]
+                    price_change_cell.number_format = percent_format
+                    if price_change_cell.value:
+                        if float(price_change_cell.value) > 0:
+                            price_change_cell.fill = openpyxl.styles.PatternFill(
+                                start_color='C6EFCE',
+                                end_color='C6EFCE',
+                                fill_type='solid'
+                            )
+                            price_change_cell.font = openpyxl.styles.Font(color='006100')
+                        elif float(price_change_cell.value) < 0:
+                            price_change_cell.fill = openpyxl.styles.PatternFill(
+                                start_color='FFC7CE',
+                                end_color='FFC7CE',
+                                fill_type='solid'
+                            )
+                            price_change_cell.font = openpyxl.styles.Font(color='9C0006')
+                
+                # Write analysis sheets with similar formatting
+                analysis['Top 5 by Market Cap'].to_excel(writer, sheet_name='Analysis', startrow=1, index=False)
+                pd.DataFrame({'Average Price (USD)': [analysis['Average Price']]}).to_excel(
+                    writer, sheet_name='Analysis', startrow=8, index=False)
                 analysis['Highest 24h Change'].to_excel(writer, sheet_name='Analysis', startrow=11, index=False)
                 analysis['Lowest 24h Change'].to_excel(writer, sheet_name='Analysis', startrow=14, index=False)
                 
