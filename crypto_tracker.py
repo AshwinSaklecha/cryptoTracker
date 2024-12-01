@@ -117,7 +117,7 @@ class CryptoTracker:
                                                        right=openpyxl.styles.Side(style='thin'))
                 
                 # Format numbers
-                price_format = openpyxl.styles.numbers.BUILTIN_FORMATS[44]  # Currency with 2 decimal places
+                price_format =  '#,##0.00' # Currency with 2 decimal places
                 large_number_format = '#,##0'
                 percent_format = '0.00%'
                 
