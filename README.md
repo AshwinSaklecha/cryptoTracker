@@ -39,25 +39,21 @@ A real-time cryptocurrency tracking system that monitors the top 50 cryptocurren
 1. Clone the repository:
    ```bash
    git clone https://github.com/AshwinSaklecha/cryptoTracker.git
-   cd crypto-market-tracker
-   
+   cd cryptoTracker
 
 2. Install required packages:
    ```bash
    pip install -r requirements.txt
-   
 
 ## Usage 💻
 
 1. Start the cryptocurrency tracker (keeps running and updating Excel):
    ```bash
    python crypto_tracker.py
-   
 
 2. In a separate terminal, generate an analysis report:
    ```bash
    python generate_report.py
-   
 
 ## Output Files 📁
 
